@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- TODO: Remove this file if you don't need to customize device-to-device backup. -->
+    <!--
+    This file is used to specify which files are backed up when the user performs a
+    device-to-device transfer. For more information, see the following page:
+    https://developer.android.com/guide/topics/data/d2d-backup
+    -->
+</full-backup-content>
