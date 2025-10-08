@@ -15,5 +15,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BubblePlayer"
+rootProject.name = "Poet Music"
 include(":app")
