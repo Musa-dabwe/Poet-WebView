@@ -34,6 +34,9 @@ class MainActivity : AppCompatActivity() {
             ): Boolean {
                 this@MainActivity.filePathCallback = filePathCallback
                 val intent = fileChooserParams.createIntent()
+                if (fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                }
                 try {
                     startActivityForResult(intent, fileChooserRequestCode)
                 } catch (e: Exception) {
