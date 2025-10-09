@@ -23,9 +23,14 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val webView = binding.webview
-        webView.settings.javaScriptEnabled = true
-        webView.settings.allowFileAccess = true
-        webView.settings.domStorageEnabled = true
+        val settings = webView.settings
+        settings.javaScriptEnabled = true
+        settings.allowFileAccess = true
+        settings.domStorageEnabled = true
+
+        // ✅ STEP 1: Allow programmatic media playback (no user gesture required for next track)
+        webView.setMediaPlaybackRequiresUserGesture(false)
+
         webView.webViewClient = WebViewClient()
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
@@ -33,7 +38,6 @@ class MainActivity : AppCompatActivity() {
                 filePathCallback: ValueCallback<Array<Uri>>,
                 fileChooserParams: FileChooserParams
             ): Boolean {
-                // Clean up any previous callback
                 this@MainActivity.filePathCallback?.onReceiveValue(null)
                 this@MainActivity.filePathCallback = filePathCallback
 
@@ -57,6 +61,20 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("https://poetmusic.netlify.app/")
     }
 
+    // ✅ STEP 2 & 3: Manage WebView lifecycle properly
+    override fun onResume() {
+        super.onResume()
+        binding.webview.onResume()
+        binding.webview.resumeTimers() // Keeps JS timers (e.g., playlist logic) running
+    }
+
+    override fun onPause() {
+        super.onPause()
+        binding.webview.onPause()
+        // ❌ DO NOT call pauseTimers() — it freezes JS and breaks auto-advance
+        // binding.webview.pauseTimers()
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
@@ -66,11 +84,9 @@ class MainActivity : AppCompatActivity() {
             var results: Array<Uri>? = null
 
             if (resultCode == Activity.RESULT_OK && data != null) {
-                // Handle single file
                 if (data.data != null) {
                     results = arrayOf(data.data!!)
                 } else {
-                    // Handle multiple files via ClipData
                     data.clipData?.let { clipData ->
                         val uris = mutableListOf<Uri>()
                         for (i in 0 until clipData.itemCount) {
