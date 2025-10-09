@@ -10,10 +10,6 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import com.musa.poetmusic.databinding.ActivityMainBinding
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.util.zip.ZipInputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -26,34 +22,27 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Unzip website content from assets to internal storage
-        unzipFromAssets("index.zip")
-
-        // Load the local index.html file
-        val indexFile = File(filesDir, "index.html")
-        if (indexFile.exists()) {
-            binding.webview.settings.javaScriptEnabled = true
-            binding.webview.settings.allowFileAccess = true
-            binding.webview.settings.domStorageEnabled = true // Enable DOM Storage
-            binding.webview.webViewClient = WebViewClient()
-            binding.webview.webChromeClient = object : WebChromeClient() {
-                override fun onShowFileChooser(
-                    webView: WebView,
-                    filePathCallback: ValueCallback<Array<Uri>>,
-                    fileChooserParams: FileChooserParams
-                ): Boolean {
-                    this@MainActivity.filePathCallback = filePathCallback
-                    val intent = fileChooserParams.createIntent()
-                    try {
-                        startActivityForResult(intent, fileChooserRequestCode)
-                    } catch (e: Exception) {
-                        return false
-                    }
-                    return true
+        binding.webview.settings.javaScriptEnabled = true
+        binding.webview.settings.allowFileAccess = true
+        binding.webview.settings.domStorageEnabled = true
+        binding.webview.webViewClient = WebViewClient()
+        binding.webview.webChromeClient = object : WebChromeClient() {
+            override fun onShowFileChooser(
+                webView: WebView,
+                filePathCallback: ValueCallback<Array<Uri>>,
+                fileChooserParams: FileChooserParams
+            ): Boolean {
+                this@MainActivity.filePathCallback = filePathCallback
+                val intent = fileChooserParams.createIntent()
+                try {
+                    startActivityForResult(intent, fileChooserRequestCode)
+                } catch (e: Exception) {
+                    return false
                 }
+                return true
             }
-            binding.webview.loadUrl("file://${indexFile.absolutePath}")
         }
+        binding.webview.loadUrl("https://68e798dba018581a602a8f18--stellular-panda-0301bb.netlify.app/")
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -68,39 +57,6 @@ class MainActivity : AppCompatActivity() {
                 filePathCallback?.onReceiveValue(null)
                 filePathCallback = null
             }
-        }
-    }
-
-    private fun unzipFromAssets(zipFileName: String) {
-        val outputDir = filesDir
-        // A simple way to check if we've already unzipped is to check for a key file.
-        val checkFile = File(outputDir, "index.html")
-        if (checkFile.exists()) {
-            // Content is already unzipped.
-            return
-        }
-
-        try {
-            assets.open(zipFileName).use { inputStream ->
-                ZipInputStream(inputStream).use { zipInputStream ->
-                    var zipEntry = zipInputStream.nextEntry
-                    while (zipEntry != null) {
-                        val newFile = File(outputDir, zipEntry.name)
-                        if (zipEntry.isDirectory) {
-                            newFile.mkdirs()
-                        } else {
-                            File(newFile.parent).mkdirs()
-                            FileOutputStream(newFile).use { fileOutputStream ->
-                                zipInputStream.copyTo(fileOutputStream)
-                            }
-                        }
-                        zipInputStream.closeEntry()
-                        zipEntry = zipInputStream.nextEntry
-                    }
-                }
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
         }
     }
 }
