@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
                 return true
             }
         }
-        binding.webview.loadUrl("https://68e798dba018581a602a8f18--stellular-panda-0301bb.netlify.app/")
+        binding.webview.loadUrl("https://poetmusic.netlify.app/")
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
