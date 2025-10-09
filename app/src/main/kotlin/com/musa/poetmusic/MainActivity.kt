@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
 import com.musa.poetmusic.databinding.ActivityMainBinding
 import java.io.File
@@ -34,6 +35,7 @@ class MainActivity : AppCompatActivity() {
             binding.webview.settings.javaScriptEnabled = true
             binding.webview.settings.allowFileAccess = true
             binding.webview.settings.domStorageEnabled = true // Enable DOM Storage
+            binding.webview.webViewClient = WebViewClient()
             binding.webview.webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(
                     webView: WebView,
