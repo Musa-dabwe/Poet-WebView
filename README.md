@@ -1,104 +1,108 @@
-# How to Update the App's Website Content
+# Poet Music (Android)
 
-This document provides a detailed, step-by-step guide on how to replace the app's offline website content with your own.
+An Android application that hosts the Poet Music web app inside a full‑screen WebView. The app launches directly into `https://poetmusic.netlify.app/` and provides a native container for media playback and file selection.
+
+---
 
 ## Overview
 
-The Poet Music app does not load a live website from the internet. Instead, it displays a website that is stored directly inside the app package. This allows the app to work completely offline.
-
-This website content is stored in a single compressed file named `index.zip`. To update the website displayed in the app, you must replace this `index.zip` file with a new one containing your website's files.
-
----
-
-## Prerequisites
-
-Before you begin, you will need:
-
-1.  **Your complete website files:** This includes your main `index.html` file, all CSS files (`.css`), JavaScript files (`.js`), images (`.png`, `.jpg`, etc.), and any other assets your site needs to function.
-2.  **A file compression tool:** Most operating systems have a built-in tool to create `.zip` files. (e.g., "Compress" on macOS, "Send to > Compressed (zipped) folder" on Windows).
+- Loads the Poet Music site in a `WebView` (no native screens beyond the container)
+- Keeps all navigation within the app
+- Enables JavaScript, DOM storage, and file access
+- Allows media playback without an extra user gesture
+- Supports `<input type="file">` (single and multiple selection) via the system picker
 
 ---
 
-## Step 1: Prepare Your Website Files
+## How it works
 
-This is the most critical step. The structure of your files *before* you zip them is very important.
+- UI: `app/src/main/res/layout/activity_main.xml` hosts a full‑screen `WebView` with id `webview`.
+- Activity: `app/src/main/kotlin/com/musa/poetmusic/MainActivity.kt`
+  - Uses ViewBinding to access the `WebView`
+  - Configures WebView settings:
+    - `javaScriptEnabled = true`
+    - `domStorageEnabled = true`
+    - `allowFileAccess = true`
+    - `setMediaPlaybackRequiresUserGesture(false)` to allow programmatic playback
+  - Sets `WebViewClient()` to keep navigation inside the app
+  - Sets a `WebChromeClient` that implements `onShowFileChooser(...)` to open the system file picker and return selected URIs (single or multiple) back to the page
+  - Lifecycle:
+    - `onResume()` resumes the WebView and timers
+    - `onPause()` does not pause timers so playlist logic can continue
 
-1.  Gather all your website files and place them into a single folder. Let's call this folder `my_website` for this example.
+The current start URL is loaded here:
 
-2.  **Crucially, your main HTML file must be named `index.html` and it must be at the top level (the "root") of this folder.**
-
-    #### ✅ Correct Folder Structure:
-
-    When you open the `my_website` folder, you should immediately see `index.html`.
-
-    ```
-    my_website/
-    ├── index.html  <-- Correct! At the top level.
-    ├── style.css
-    ├── scripts.js
-    └── images/
-        └── logo.png
-    ```
-
-    #### ❌ Incorrect Folder Structure:
-
-    Do not have your website nested inside another sub-folder. The app will not be able to find it.
-
-    ```
-    my_website/
-    └── my_actual_site/  <-- This extra folder will break the app!
-        ├── index.html
-        └── style.css
-    ```
-
----
-
-## Step 2: Create the `index.zip` File
-
-Now you will compress your prepared files into the required `index.zip` file.
-
-1.  Open your `my_website` folder.
-2.  Select **all** the files and folders inside it (e.g., `index.html`, `style.css`, `images/`). **Do not select the `my_website` folder itself.**
-3.  Right-click on the selected files.
-4.  From the context menu, choose the option to compress the files.
-    *   **On Windows:** `Send to > Compressed (zipped) folder`
-    *   **On macOS:** `Compress X Items`
-5.  This will create a new `.zip` file. Your system might name it something like `archive.zip` or `images.zip` (if the `images` folder was the first thing you clicked).
-6.  **You must rename this file to `index.zip`**. This exact name is required.
-
----
-
-## Step 3: Locate the Project's `assets` Folder
-
-You now need to find where to put your new `index.zip` file in this project.
-
-1.  In the project's file explorer, navigate through the following directories:
-    `app` -> `src` -> `main` -> `assets`
-
-2.  The full path is: `app/src/main/assets/`
-
-3.  Inside this `assets` folder, you will see the existing `index.zip` file. This is the file you will replace.
-
----
-
-## Step 4: Replace the Old `index.zip`
-
-1.  **Delete** the old `index.zip` file from the `app/src/main/assets/` folder.
-2.  **Copy or move** your new `index.zip` (that you created in Step 2) into this exact location: `app/src/main/assets/`.
-
----
-
-## Final Check
-
-After following these steps, your project structure should look like this:
-
-```
-poet-music-app/
-└── app/
-    └── src/
-        └── main/
-            └── assets/
-                └── index.zip  <-- This should be YOUR zip file.
+```kotlin
+// app/src/main/kotlin/com/musa/poetmusic/MainActivity.kt
+webView.loadUrl("https://poetmusic.netlify.app/")
 ```
 
-That's it! No code changes are necessary. The next time the app is built and run, it will automatically find your new `index.zip`, unzip it, and display your `index.html` page.
+---
+
+## Change the site URL
+
+If you want the app to host a different site, edit the `loadUrl(...)` call in `MainActivity.kt`:
+
+```kotlin
+webView.loadUrl("https://your-site.example.com/")
+```
+
+Optionally, harden navigation by overriding `shouldOverrideUrlLoading` in a custom `WebViewClient` to limit external origins.
+
+---
+
+## Build and run
+
+### Requirements
+- Android Studio (latest)
+- Android SDK 34 (compile/target)
+- Gradle Wrapper (included)
+
+### Steps
+- Open the project in Android Studio, let it sync, then click Run
+- Or from the command line:
+
+```bash
+./gradlew installDebug
+```
+
+Then launch the app on your connected device/emulator.
+
+---
+
+## Project structure (high level)
+
+```
+app/
+  src/main/
+    kotlin/com/musa/poetmusic/MainActivity.kt
+    res/layout/activity_main.xml
+    AndroidManifest.xml
+build.gradle.kts
+settings.gradle.kts
+```
+
+---
+
+## Permissions
+
+Declared in `AndroidManifest.xml`:
+
+- `INTERNET` — required to load the hosted site
+- `READ_EXTERNAL_STORAGE` — present for broad compatibility with older Android versions when picking files. Modern Android typically uses the system picker (SAF) and may not require this permission; you can remove it if not needed for your use case and policy.
+
+---
+
+## Notes and limitations
+
+- Media autoplay: Enabled via `setMediaPlaybackRequiresUserGesture(false)`, but actual behavior may still depend on site logic and OS policies.
+- File uploads: `<input type="file">` is supported (single and multiple). The app returns selected URIs to the page via `onActivityResult`.
+- Offline content: The current app loads a hosted site. If you need to bundle local content, switch to loading from `file:///android_asset/...` and serve your files from `app/src/main/assets/` (not implemented in the current code).
+
+---
+
+## Troubleshooting
+
+- Nothing loads: Verify network connectivity and that the URL is reachable over HTTPS.
+- File picker not appearing: Ensure the action originates from a user gesture and that your emulator/device has a documents provider.
+- External links opening outside the app: Provide a custom `WebViewClient` and handle navigation as desired.
