@@ -4,10 +4,14 @@ import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.webkit.CookieManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import com.musa.poetmusic.databinding.ActivityMainBinding
 
@@ -30,13 +34,32 @@ class MainActivity : AppCompatActivity() {
         settings.allowFileAccess = true
         settings.domStorageEnabled = true
         settings.setMediaPlaybackRequiresUserGesture(false) // ✅ Allow programmatic playback
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE // Avoid blocking media loaded over http
 
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView,
+                request: WebResourceRequest
+            ): Boolean {
+                val uri = request.url
+                val scheme = uri.scheme ?: return false
+                return if (scheme == "http" || scheme == "https") {
+                    false
+                } else {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        true
+                    } catch (_: Exception) {
+                        false
+                    }
+                }
+            }
+        }
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
                 webView: WebView,
                 filePathCallback: ValueCallback<Array<Uri>>,
-                fileChooserParams: FileChooserParams
+                fileChooserParams: WebChromeClient.FileChooserParams
             ): Boolean {
                 // Clean up previous callback if any
                 this@MainActivity.filePathCallback?.onReceiveValue(null)
@@ -60,6 +83,46 @@ class MainActivity : AppCompatActivity() {
 
         // ✅ Load URL without trailing space
         webView.loadUrl("https://poetmusic.netlify.app/")
+
+        // Enable cookies and third-party cookies for modern auth flows
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
+
+        // Handle file downloads by delegating to the system
+        webView.setDownloadListener { url, _, _, _, _ ->
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            } catch (_: Exception) {
+                // Ignore if no handler is available
+            }
+        }
+
+        // Handle back navigation within the WebView
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (binding.webview.canGoBack()) {
+                        binding.webview.goBack()
+                    } else {
+                        // Disable this callback and delegate to system back
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
+                }
+            }
+        )
+    }
+
+    override fun onDestroy() {
+        // Proactively clean up the WebView to avoid leaks
+        binding.webview.apply {
+            stopLoading()
+            webChromeClient = null
+            webViewClient = null
+            destroy()
+        }
+        super.onDestroy()
     }
 
     override fun onResume() {
