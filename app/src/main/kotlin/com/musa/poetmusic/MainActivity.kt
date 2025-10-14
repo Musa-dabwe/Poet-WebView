@@ -1,18 +1,24 @@
 package com.musa.poetmusic
 
 import android.app.Activity
+import android.app.DownloadManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.webkit.CookieManager
+import android.webkit.URLUtil
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
-import android.webkit.WebSettings
 import android.webkit.WebResourceRequest
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.musa.poetmusic.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -26,15 +32,16 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val webView = binding.webview
+        val webView: ObservableWebView = binding.webview
+        val fab: FloatingActionButton = binding.fab
         val settings = webView.settings
 
         // Enable essential WebView features
         settings.javaScriptEnabled = true
         settings.allowFileAccess = true
         settings.domStorageEnabled = true
-        settings.setMediaPlaybackRequiresUserGesture(false) // ✅ Allow programmatic playback
-        settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE // Avoid blocking media loaded over http
+        settings.setMediaPlaybackRequiresUserGesture(false)
+        settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
 
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(
@@ -59,9 +66,8 @@ class MainActivity : AppCompatActivity() {
             override fun onShowFileChooser(
                 webView: WebView,
                 filePathCallback: ValueCallback<Array<Uri>>,
-                fileChooserParams: WebChromeClient.FileChooserParams
+                fileChooserParams: FileChooserParams
             ): Boolean {
-                // Clean up previous callback if any
                 this@MainActivity.filePathCallback?.onReceiveValue(null)
                 this@MainActivity.filePathCallback = filePathCallback
 
@@ -81,23 +87,40 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // ✅ Load URL without trailing space
-        webView.loadUrl("https://poetmusic.netlify.app/")
+        webView.loadUrl("https://68e798dba018581a602a8f18--stellular-panda-0301bb.netlify.app/")
 
-        // Enable cookies and third-party cookies for modern auth flows
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
 
-        // Handle file downloads by delegating to the system
-        webView.setDownloadListener { url, _, _, _, _ ->
-            try {
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
-            } catch (_: Exception) {
-                // Ignore if no handler is available
+        webView.setDownloadListener { url, userAgent, contentDisposition, mimetype, _ ->
+            val request = DownloadManager.Request(Uri.parse(url))
+            request.setMimeType(mimetype)
+            request.addRequestHeader("cookie", CookieManager.getInstance().getCookie(url))
+            request.addRequestHeader("User-Agent", userAgent)
+            request.setDescription("Downloading file...")
+            request.setTitle(URLUtil.guessFileName(url, contentDisposition, mimetype))
+            request.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+            request.setDestinationInExternalPublicDir(
+                Environment.DIRECTORY_DOWNLOADS,
+                URLUtil.guessFileName(url, contentDisposition, mimetype)
+            )
+            val dm = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
+            dm.enqueue(request)
+            Toast.makeText(applicationContext, "Downloading File", Toast.LENGTH_LONG).show()
+        }
+
+        webView.onScrollChangedCallback = { _, t, _, oldt ->
+            if (t > oldt) {
+                fab.hide()
+            } else if (t < oldt) {
+                fab.show()
             }
         }
 
-        // Handle back navigation within the WebView
+        fab.setOnClickListener {
+            startActivity(Intent(DownloadManager.ACTION_VIEW_DOWNLOADS))
+        }
+
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
@@ -105,7 +128,6 @@ class MainActivity : AppCompatActivity() {
                     if (binding.webview.canGoBack()) {
                         binding.webview.goBack()
                     } else {
-                        // Disable this callback and delegate to system back
                         isEnabled = false
                         onBackPressedDispatcher.onBackPressed()
                     }
@@ -115,7 +137,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        // Proactively clean up the WebView to avoid leaks
         binding.webview.apply {
             stopLoading()
             webChromeClient = null
@@ -128,13 +149,12 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         binding.webview.onResume()
-        binding.webview.resumeTimers() // Keeps JS timers (e.g., playlist logic) running
+        binding.webview.resumeTimers()
     }
 
     override fun onPause() {
         super.onPause()
         binding.webview.onPause()
-        // ❌ Do NOT call pauseTimers() — it breaks auto-advance between tracks
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -142,15 +162,11 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == FILE_CHOOSER_REQUEST_CODE) {
             val callback = filePathCallback ?: return
-
             var results: Array<Uri>? = null
-
             if (resultCode == Activity.RESULT_OK && data != null) {
-                // Single file
                 if (data.data != null) {
                     results = arrayOf(data.data!!)
                 } else {
-                    // Multiple files via ClipData
                     data.clipData?.let { clipData ->
                         val uris = mutableListOf<Uri>()
                         for (i in 0 until clipData.itemCount) {
@@ -164,7 +180,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-
             callback.onReceiveValue(results)
             filePathCallback = null
         }
