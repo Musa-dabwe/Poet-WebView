@@ -1,6 +1,6 @@
 # Poet Music (Android)
 
-An Android application that hosts the Poet Music web app inside a full‑screen WebView. The app launches directly into `https://poetmusic.netlify.app/` and provides a native container for media playback and file selection.
+An Android application that hosts the Poet Music web app inside a full‑screen WebView. The app launches directly into `https://68e798dba018581a602a8f18--stellular-panda-0301bb.netlify.app/` and provides a native container for media playback, file selection, and downloads.
 
 ---
 
@@ -11,14 +11,16 @@ An Android application that hosts the Poet Music web app inside a full‑screen 
 - Enables JavaScript, DOM storage, and file access
 - Allows media playback without an extra user gesture
 - Supports `<input type="file">` (single and multiple selection) via the system picker
+- Handles file downloads using Android's `DownloadManager`
+- Displays a floating action button to open the download manager, which auto-hides on scroll
 
 ---
 
 ## How it works
 
-- UI: `app/src/main/res/layout/activity_main.xml` hosts a full‑screen `WebView` with id `webview`.
+- UI: `app/src/main/res/layout/activity_main.xml` hosts a full‑screen `ObservableWebView` inside a `CoordinatorLayout` with a `FloatingActionButton`.
 - Activity: `app/src/main/kotlin/com/musa/poetmusic/MainActivity.kt`
-  - Uses ViewBinding to access the `WebView`
+  - Uses ViewBinding to access the `WebView` and `FloatingActionButton`
   - Configures WebView settings:
     - `javaScriptEnabled = true`
     - `domStorageEnabled = true`
@@ -26,6 +28,8 @@ An Android application that hosts the Poet Music web app inside a full‑screen 
     - `setMediaPlaybackRequiresUserGesture(false)` to allow programmatic playback
   - Sets `WebViewClient()` to keep navigation inside the app
   - Sets a `WebChromeClient` that implements `onShowFileChooser(...)` to open the system file picker and return selected URIs (single or multiple) back to the page
+  - Sets a `DownloadListener` that uses `DownloadManager` to handle file downloads
+  - Implements a scroll listener on the `ObservableWebView` to show/hide the `FloatingActionButton`
   - Lifecycle:
     - `onResume()` resumes the WebView and timers
     - `onPause()` does not pause timers so playlist logic can continue
@@ -34,7 +38,7 @@ The current start URL is loaded here:
 
 ```kotlin
 // app/src/main/kotlin/com/musa/poetmusic/MainActivity.kt
-webView.loadUrl("https://poetmusic.netlify.app/")
+webView.loadUrl("https://68e798dba018581a602a8f18--stellular-panda-0301bb.netlify.app/")
 ```
 
 ---
@@ -75,7 +79,9 @@ Then launch the app on your connected device/emulator.
 ```
 app/
   src/main/
-    kotlin/com/musa/poetmusic/MainActivity.kt
+    kotlin/com/musa/poetmusic/
+      MainActivity.kt
+      ObservableWebView.kt
     res/layout/activity_main.xml
     AndroidManifest.xml
 build.gradle.kts
@@ -89,7 +95,9 @@ settings.gradle.kts
 Declared in `AndroidManifest.xml`:
 
 - `INTERNET` — required to load the hosted site
-- `READ_EXTERNAL_STORAGE` — present for broad compatibility with older Android versions when picking files. Modern Android typically uses the system picker (SAF) and may not require this permission; you can remove it if not needed for your use case and policy.
+- `WRITE_EXTERNAL_STORAGE` — required for the `DownloadManager` to save files to external storage.
+- `FOREGROUND_SERVICE` — good practice when using `DownloadManager`.
+- `DOWNLOAD_WITHOUT_NOTIFICATION` — allows the app to download files without showing a notification.
 
 ---
 
@@ -106,3 +114,4 @@ Declared in `AndroidManifest.xml`:
 - Nothing loads: Verify network connectivity and that the URL is reachable over HTTPS.
 - File picker not appearing: Ensure the action originates from a user gesture and that your emulator/device has a documents provider.
 - External links opening outside the app: Provide a custom `WebViewClient` and handle navigation as desired.
+- Downloads failing: Ensure the `WRITE_EXTERNAL_STORAGE` permission is granted on the device.
