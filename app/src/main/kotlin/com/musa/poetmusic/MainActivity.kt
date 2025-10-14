@@ -87,7 +87,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        webView.loadUrl("https://68e798dba018581a602a8f18--stellular-panda-0301bb.netlify.app/")
+        webView.loadUrl("Enter https website here")
 
         CookieManager.getInstance().setAcceptCookie(true)
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true)
