@@ -9,7 +9,9 @@
     <com.musa.poetmusic.ObservableWebView
         android:id="@+id/webview"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:focusable="true" 
+        android:focusable />
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fab"
