@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.musa.poetmusic"
+    namespace = "com.musa.webview"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.musa.poetmusic"
+        applicationId = "com.musa.webview"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
