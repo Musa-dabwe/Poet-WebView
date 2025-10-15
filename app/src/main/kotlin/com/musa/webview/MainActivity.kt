@@ -94,7 +94,7 @@ class MainActivity : AppCompatActivity() {
         }
         webView.webChromeClient = object : WebChromeClient() {
             override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
-                if (request.origin.toString() == "https://68e798dba018581a602a8f18--stellular-panda-0301bb.netlify.app/") {
+                if (request.origin.toString() == "https://your-website.com") {
                     request.grant(request.resources)
                 } else {
                     request.deny()
