@@ -1,4 +1,4 @@
-package com.musa.poetmusic
+package com.musa.webview
 
 import android.app.Activity
 import android.app.DownloadManager
@@ -19,14 +19,11 @@ import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
-import android.content.pm.PackageManager
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import com.musa.poetmusic.databinding.ActivityMainBinding
+import com.musa.webview.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
@@ -40,9 +37,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.RECORD_AUDIO), 1)
-        }
 
         ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, windowInsets ->
             val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -71,35 +65,20 @@ class MainActivity : AppCompatActivity() {
                 request: WebResourceRequest
             ): Boolean {
                 val uri = request.url
-                val scheme = uri.scheme
-                if (scheme == "http" || scheme == "https") {
-                    // Let the WebView handle HTTP and HTTPS links by default
-                    return false
-                }
-                try {
-                    // For other schemes, try to find an app that can handle it
-                    val intent = Intent(Intent.ACTION_VIEW, uri)
-                    val specializedApp = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-                    if (specializedApp != null) {
-                        startActivity(intent)
-                        return true
+                val scheme = uri.scheme ?: return false
+                return if (scheme == "http" || scheme == "https") {
+                    false
+                } else {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, uri))
+                        true
+                    } catch (_: Exception) {
+                        false
                     }
-                } catch (e: Exception) {
-                    // No app found or other error
-                    Toast.makeText(this@MainActivity, "No app found to handle this link", Toast.LENGTH_SHORT).show()
                 }
-                // If no app can handle it, block the navigation
-                return true
             }
         }
         webView.webChromeClient = object : WebChromeClient() {
-            override fun onPermissionRequest(request: android.webkit.PermissionRequest) {
-                if (request.origin.toString() == "https://68e798dba018581a602a8f18--stellular-panda-0301bb.netlify.app/") {
-                    request.grant(request.resources)
-                } else {
-                    request.deny()
-                }
-            }
             override fun onShowFileChooser(
                 webView: WebView,
                 filePathCallback: ValueCallback<Array<Uri>>,
