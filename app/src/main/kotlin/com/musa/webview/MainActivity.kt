@@ -1,4 +1,4 @@
-package com.musa.poetmusic
+package com.musa.webview
 
 import android.app.Activity
 import android.app.DownloadManager
@@ -26,7 +26,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
-import com.musa.poetmusic.databinding.ActivityMainBinding
+import com.musa.webview.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
