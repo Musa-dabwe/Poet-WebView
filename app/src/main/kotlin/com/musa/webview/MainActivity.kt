@@ -165,7 +165,7 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         binding.webview.apply {
             stopLoading()
-            webChromeClient = WebViewClient()
+            webChromeClient = WebChromeClient()
             webViewClient = WebViewClient()
             destroy()
         }
