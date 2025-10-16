@@ -145,7 +145,9 @@ class MainActivity : AppCompatActivity() {
             dm.enqueue(request)
             Toast.makeText(applicationContext, "Downloading File", Toast.LENGTH_LONG).show()
         }
-
+        swipeRefreshLayout.setOnRefreshListener {
+            webView.reload() // Reload the WebView content
+        }
 
         onBackPressedDispatcher.addCallback(
             this,
