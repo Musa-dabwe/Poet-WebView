@@ -66,6 +66,10 @@ class MainActivity : AppCompatActivity() {
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
 
         webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                binding.swipeRefreshLayout.isRefreshing = false
+            }
             override fun shouldOverrideUrlLoading(
                 view: WebView,
                 request: WebResourceRequest
@@ -145,7 +149,7 @@ class MainActivity : AppCompatActivity() {
             dm.enqueue(request)
             Toast.makeText(applicationContext, "Downloading File", Toast.LENGTH_LONG).show()
         }
-        swipeRefreshLayout.setOnRefreshListener {
+        binding.swipeRefreshLayout.setOnRefreshListener {
             webView.reload() // Reload the WebView content
         }
 
