@@ -6,12 +6,19 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <com.musa.webview.ObservableWebView
-        android:id="@+id/webview"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:focusable="true" 
-        android:focusableInTouchMode="true" />
+        android:layout_height="match_parent">
+
+        <com.musa.webview.ObservableWebView
+            android:id="@+id/webview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
